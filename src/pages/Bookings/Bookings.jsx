@@ -1,24 +1,37 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 import { useContext, useEffect, useState } from "react";
-import { useLoaderData } from "react-router-dom";
+import { useLoaderData, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../providers/AuthProvider";
 import BookingRow from "./BookingRow";
 
 const Bookings = () => {
     const { user } = useContext(AuthContext);
     const [bookings, setBookings] = useState([])
+    const navigate = useNavigate();
 
     useEffect(() => {
-        fetch(`http://localhost:5000/bookings?email=${user.email}`)
+        fetch(`https://car-doctor-server-eight-dusky.vercel.app/bookings?email=${user.email}`,{
+            method: "GET",
+            headers: {
+                authorization: `Bearer ${localStorage.getItem('car-access-token')}`
+            }
+        })
             .then(res => res.json())
-            .then(data => setBookings(data))
+            .then(data => {
+                if(!data.error){
+                    setBookings(data);
+                }
+                else{
+                     navigate('/');
+                }
+            })
     }, [])
 
     const handleDelete = id => {
         const proceed = confirm('Are you sure you want to delete');
         if (proceed) {
-            fetch(`http://localhost:5000/bookings/${id}`, {
+            fetch(`https://car-doctor-server-eight-dusky.vercel.app/bookings/${id}`, {
                 method: "DELETE"
             })
                 .then(res => res.json())
@@ -34,7 +47,7 @@ const Bookings = () => {
     }
 
     const handleUpdate = id => {
-        fetch(`http://localhost:5000/bookings/${id}`, {
+        fetch(`https://car-doctor-server-eight-dusky.vercel.app/bookings/${id}`, {
             method: "PATCH",
             headers: {
                 "content-type": "application/json",

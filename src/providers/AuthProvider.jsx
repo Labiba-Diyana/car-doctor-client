@@ -1,11 +1,12 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 import React, { createContext, useEffect, useState } from 'react';
-import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { GoogleAuthProvider, createUserWithEmailAndPassword, getAuth, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from "firebase/auth";
 import app from '../firebase/firebase.config';
 
 export const AuthContext = createContext();
 const auth = getAuth(app);
+const provider = new GoogleAuthProvider()
 
 const AuthProvider = ({children}) => {
     const [user, setUser] = useState(null);
@@ -26,11 +27,37 @@ const AuthProvider = ({children}) => {
         return signOut(auth);
     }
 
+    const singINWithGoogle = () => {
+        setLoading(true);
+        return signInWithPopup(auth, provider);
+    }
+
     useEffect(()=>{
         const unsubscribe = onAuthStateChanged(auth, currentUser => {
             setUser(currentUser);
             // console.log(currentUser);
             setLoading(false);
+            if(currentUser && currentUser.email){
+                const loggedUser = {
+                    email: currentUser.email
+                }
+                fetch('https://car-doctor-server-eight-dusky.vercel.app/jwt', {
+                        method: 'POST',
+                        headers: {
+                            'content-type': 'application/json'
+                        },
+                        body: JSON.stringify(loggedUser)
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            console.log(data);
+                            localStorage.setItem('car-access-token', data.token);
+    
+                        })
+            }
+            else{
+                localStorage.removeItem('car-access-token');
+            }
         });
         return () => {
             return unsubscribe();
@@ -42,7 +69,8 @@ const AuthProvider = ({children}) => {
         loading,
         createUser,
         singInUser,
-        singOut
+        singOut,
+        singINWithGoogle
     }
 
     return (
